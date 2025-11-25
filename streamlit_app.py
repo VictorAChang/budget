@@ -5,6 +5,65 @@ import xlsxwriter
 
 st.set_page_config(page_title="Chang Budget", layout="centered")
 
+# Custom theme with Microsoft colors
+st.markdown("""
+    <style>
+    .stApp {
+        background: linear-gradient(135deg, #0078D4 0%, #50E6FF 100%);
+    }
+    .main .block-container {
+        background-color: rgba(255, 255, 255, 0.95);
+        padding: 2rem;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    h1, h2, h3, h4, h5, h6 {
+        color: #0078D4 !important;
+    }
+    .stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stMarkdown h4, .stMarkdown h5, .stMarkdown h6 {
+        color: #0078D4 !important;
+    }
+    div[data-testid="stMarkdownContainer"] h1,
+    div[data-testid="stMarkdownContainer"] h2,
+    div[data-testid="stMarkdownContainer"] h3,
+    div[data-testid="stMarkdownContainer"] h4,
+    div[data-testid="stMarkdownContainer"] h5,
+    div[data-testid="stMarkdownContainer"] h6 {
+        color: #0078D4 !important;
+    }
+    .stMarkdown p, .stMarkdown strong, .stMarkdown em {
+        color: #323130 !important;
+    }
+    div[data-testid="stMarkdownContainer"] p,
+    div[data-testid="stMarkdownContainer"] strong,
+    div[data-testid="stMarkdownContainer"] em {
+        color: #323130 !important;
+    }
+    .stButton button {
+        background-color: #0078D4 !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 4px !important;
+        padding: 0.5rem 1rem !important;
+        font-weight: 600 !important;
+    }
+    .stButton button:hover {
+        background-color: #106EBE !important;
+    }
+    .stDownloadButton button {
+        background-color: #0078D4 !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 4px !important;
+        padding: 0.5rem 1rem !important;
+        font-weight: 600 !important;
+    }
+    .stDownloadButton button:hover {
+        background-color: #106EBE !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
 # 🚀 Header
 st.title("🧑‍🚀 Chang Family Budgetary Tool")
 st.caption("Track your budget, launch your goals, and orbit financial freedom.")
@@ -13,13 +72,17 @@ st.caption("Track your budget, launch your goals, and orbit financial freedom.")
 st.subheader("💰 Monthly Income & Expenses")
 
 # Base income and expenses
-income = st.number_input("Monthly Income", value=6200)
-car_payment = st.number_input("Car Payment", value=467)
-insurance = st.number_input("Car Insurance", value=100)
-house = st.number_input("House Payment", value=1400)
-phone = st.number_input("Phone Bill", value=100)
-food = st.number_input("Food Budget", value=800)
-misc = st.number_input("Miscellaneous", value=300)
+income = st.number_input("Monthly Income", value=4044.91, format="%.2f")
+home = st.number_input("House Payment")
+home_insurance = st.number_input("Home Insurance")
+car_payment = st.number_input("Car Payment")
+car_insurance = st.number_input("Car Insurance")
+phone_bill = st.number_input("Phone Bill")
+internet = st.number_input("Internet Bill")
+electricity = st.number_input("Electricity Bill")
+water = st.number_input("Water Bill")
+
+
 
 # Additional income
 st.markdown("#### ➕ Add Additional Income Sources")
@@ -67,66 +130,85 @@ else:
 
 # Calculate totals
 total_income = income + total_additional_income
-total_expenses = car_payment + insurance + phone + food + misc + total_additional_expenses
+total_expenses = home + home_insurance + car_payment + car_insurance + phone_bill + internet + electricity + water + total_additional_expenses
 surplus = total_income - total_expenses
 
+st.markdown(f"**💵 Total Income:** ${total_income:,.2f}")
 st.markdown(f"**🧾 Total Expenses:** ${total_expenses:,.2f}")
 st.markdown(f"**📈 Monthly Surplus:** ${surplus:,.2f}")
 
 # 🎯 Savings Goals
-st.subheader("🏦 Savings Goals")
-house_fund = st.slider("House Fund Contribution", 0, int(surplus), value=2000)
-transition_fund = st.slider("Transition Fund Contribution", 0, int(max(0, surplus - house_fund)), value=1000)
-student_loan_fund = st.slider("Student Loan Contribution", 0, int(max(0, surplus - house_fund - transition_fund)), value=500)
+st.subheader("🎯 Savings Goals")
+st.markdown("#### ➕ Create Savings Goals")
 
-remaining_buffer = surplus - house_fund - transition_fund - student_loan_fund
-st.markdown(f"**🧮 Remaining Buffer:** ${remaining_buffer:,.2f}")
+if "savings_goals" not in st.session_state:
+    st.session_state.savings_goals = []
 
-# 📊 Summary Dashboard
-st.subheader("📊 Budget Summary")
-st.metric("Total Monthly Income", f"${income:,.2f}")
-st.metric("Total Expenses", f"${total_expenses:,.2f}")
-st.metric("Savings Contributions", f"${house_fund + transition_fund + student_loan_fund:,.2f}")
-st.metric("Remaining Buffer", f"${remaining_buffer:,.2f}")
+with st.form("add_savings_goal_form"):
+    goal_name = st.text_input("Goal Name (e.g., Emergency Fund, Vacation)")
+    goal_target = st.number_input("Target Amount ($)", min_value=0.0, format="%.2f", key="goal_target")
+    goal_monthly = st.number_input("Monthly Contribution ($)", min_value=0.0, format="%.2f", key="goal_monthly")
+    add_goal_submit = st.form_submit_button("Add Savings Goal")
+    if add_goal_submit and goal_name and goal_target > 0 and goal_monthly > 0:
+        months_to_goal = goal_target / goal_monthly if goal_monthly > 0 else 0
+        st.session_state.savings_goals.append({
+            "Goal": goal_name,
+            "Target": goal_target,
+            "Monthly": goal_monthly,
+            "Months": months_to_goal
+        })
+
+if st.session_state.savings_goals:
+    st.markdown("#### 📊 Your Savings Goals")
+    
+    # Allow modification of monthly contributions
+    for i, goal in enumerate(st.session_state.savings_goals):
+        col1, col2, col3, col4, col5 = st.columns([2, 2, 2, 2, 1])
+        with col1:
+            st.markdown(f"**{goal['Goal']}**")
+        with col2:
+            st.markdown(f"Target: ${goal['Target']:,.2f}")
+        with col3:
+            new_monthly = st.number_input(
+                f"Monthly", 
+                min_value=0.0, 
+                value=float(goal['Monthly']),
+                format="%.2f",
+                key=f"modify_goal_{i}"
+            )
+            if new_monthly != goal['Monthly']:
+                st.session_state.savings_goals[i]['Monthly'] = new_monthly
+                st.session_state.savings_goals[i]['Months'] = goal['Target'] / new_monthly if new_monthly > 0 else 0
+        with col4:
+            months = goal['Target'] / goal['Monthly'] if goal['Monthly'] > 0 else 0
+            years = months / 12
+            if years >= 1:
+                st.markdown(f"⏱️ {years:.1f} years ({months:.1f} months)")
+            else:
+                st.markdown(f"⏱️ {months:.1f} months")
+        with col5:
+            if st.button("🗑️", key=f"delete_goal_{i}"):
+                st.session_state.savings_goals.pop(i)
+                st.rerun()
+    
+    # Calculate total monthly savings allocation
+    total_savings_allocation = sum(goal['Monthly'] for goal in st.session_state.savings_goals)
+    remaining_surplus = surplus - total_savings_allocation
+    
+    st.markdown("---")
+    st.markdown(f"**💰 Total Monthly Savings Allocation:** ${total_savings_allocation:,.2f}")
+    st.markdown(f"**📈 Remaining Surplus After Savings:** ${remaining_surplus:,.2f}")
+    
+    if remaining_surplus < 0:
+        st.warning(f"⚠️ Warning: Your savings goals exceed your surplus by ${abs(remaining_surplus):,.2f}")
+else:
+    st.info("No savings goals yet. Create one above to track your progress!")
 
 
-# Optional: Visual summary charts
-col1, col2 = st.columns(2)
-with col1:
-    st.markdown("##### Income vs Expenses")
-    pie_df = pd.DataFrame({
-        "Type": ["Total Income", "Total Expenses"],
-        "Amount": [total_income, total_expenses]
-    })
-    st.plotly_chart({
-        "data": [{
-            "labels": pie_df["Type"],
-            "values": pie_df["Amount"],
-            "type": "pie",
-            "hole": .4
-        }],
-        "layout": {"showlegend": True}
-    }, use_container_width=True)
-
-with col2:
-    st.markdown("##### Savings Allocation")
-    savings_pie = pd.DataFrame({
-        "Fund": ["House", "Transition", "Student Loan", "Buffer"],
-        "Amount": [house_fund, transition_fund, student_loan_fund, remaining_buffer]
-    })
-    st.plotly_chart({
-        "data": [{
-            "labels": savings_pie["Fund"],
-            "values": savings_pie["Amount"],
-            "type": "pie"
-        }],
-        "layout": {"showlegend": True}
-    }, use_container_width=True)
 
 
 # 📥 Downloadable & Visual Budget Spreadsheet
 st.subheader("⬇️ Download Your Budget Spreadsheet")
-
 
 # Organize data into sections for better visualization
 income_rows = [
@@ -139,11 +221,14 @@ income_rows += [
 income_rows.append({"Section": "Income", "Category": "Total Income", "Amount": total_income})
 
 expense_rows = [
+    {"Section": "Expenses", "Category": "Car Payment", "Amount": home},
+    {"Section": "Expenses", "Category": "Home Insurance", "Amount": home_insurance},
     {"Section": "Expenses", "Category": "Car Payment", "Amount": car_payment},
-    {"Section": "Expenses", "Category": "Car Insurance", "Amount": insurance},
-    {"Section": "Expenses", "Category": "Phone Bill", "Amount": phone},
-    {"Section": "Expenses", "Category": "Food Budget", "Amount": food},
-    {"Section": "Expenses", "Category": "Miscellaneous", "Amount": misc}
+    {"Section": "Expenses", "Category": "Car Insurance", "Amount": car_insurance},
+    {"Section": "Expenses", "Category": "Phone Bill", "Amount": phone_bill},
+    {"Section": "Expenses", "Category": "Internet Bill", "Amount": internet},
+    {"Section": "Expenses", "Category": "Electricity Bill", "Amount": electricity},
+    {"Section": "Expenses", "Category": "Water Bill", "Amount": water}
 ]
 expense_rows += [
     {"Section": "Expenses", "Category": f"Additional Expense: {item['Expense']}", "Amount": item["Amount"]}
@@ -155,12 +240,26 @@ summary_rows = [
     {"Section": "Summary", "Category": "Monthly Surplus", "Amount": surplus}
 ]
 
-savings_rows = [
-    {"Section": "Savings", "Category": "House Fund Contribution", "Amount": house_fund},
-    {"Section": "Savings", "Category": "Transition Fund Contribution", "Amount": transition_fund},
-    {"Section": "Savings", "Category": "Student Loan Contribution", "Amount": student_loan_fund},
-    {"Section": "Savings", "Category": "Remaining Buffer", "Amount": remaining_buffer}
-]
+savings_rows = []
+if st.session_state.savings_goals:
+    for goal in st.session_state.savings_goals:
+        savings_rows.append({
+            "Section": "Savings Goals",
+            "Category": f"{goal['Goal']} (Target: ${goal['Target']:,.2f}, Timeline: {goal['Months']:.1f} months)",
+            "Amount": goal['Monthly']
+        })
+    total_savings_allocation = sum(goal['Monthly'] for goal in st.session_state.savings_goals)
+    remaining_surplus = surplus - total_savings_allocation
+    savings_rows.append({
+        "Section": "Savings Goals",
+        "Category": "Total Savings Allocation",
+        "Amount": total_savings_allocation
+    })
+    savings_rows.append({
+        "Section": "Savings Goals",
+        "Category": "Remaining Surplus",
+        "Amount": remaining_surplus
+    })
 
 # Combine all rows
 export_rows = income_rows + expense_rows + summary_rows + savings_rows
@@ -169,10 +268,10 @@ export_df = pd.DataFrame(export_rows)
 # Show a styled preview table
 def highlight_section(row):
     color = {
-        "Income": "#e0f7fa",
-        "Expenses": "#ffebee",
-        "Savings": "#e8f5e9",
-        "Summary": "#fffde7"
+        "Income": "#43c0d1",
+        "Expenses": "#a64957",
+        "Summary": "#a29936",
+        "Savings Goals": "#7cb342"
     }.get(row.Section, "#ffffff")
     return [f"background-color: {color}"] * len(row)
 
