@@ -3,10 +3,10 @@ import pandas as pd
 import io
 import xlsxwriter
 
-st.set_page_config(page_title="Victor's Mission Control", layout="centered")
+st.set_page_config(page_title="Chang Budget", layout="centered")
 
 # 🚀 Header
-st.title("🧑‍🚀 Victor’s Mission Control")
+st.title("🧑‍🚀 Chang Family Budgetary Tool")
 st.caption("Track your budget, launch your goals, and orbit financial freedom.")
 
 # 📥 Income & Fixed Expenses
@@ -16,6 +16,7 @@ st.subheader("💰 Monthly Income & Expenses")
 income = st.number_input("Monthly Income", value=6200)
 car_payment = st.number_input("Car Payment", value=467)
 insurance = st.number_input("Car Insurance", value=100)
+house = st.number_input("House Payment", value=1400)
 phone = st.number_input("Phone Bill", value=100)
 food = st.number_input("Food Budget", value=800)
 misc = st.number_input("Miscellaneous", value=300)
