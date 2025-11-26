@@ -427,27 +427,32 @@ def to_excel(df, chart_fig1, chart_fig2, chart_fig3=None):
     worksheet.set_column(2, 2, 18)
     
     # Add charts to the visualizations sheet
+    charts_worksheet.write('A1', 'Budget Visualizations', workbook.add_format({'bold': True, 'font_size': 14}))
+    
     # Save plotly charts as images and insert them
     try:
         # Save fig1 (Budget Distribution)
-        img1_bytes = chart_fig1.to_image(format="png", width=800, height=600)
+        img1_bytes = chart_fig1.to_image(format="png", width=800, height=600, engine="kaleido")
         img1_stream = io.BytesIO(img1_bytes)
         charts_worksheet.insert_image('A2', 'budget_distribution.png', {'image_data': img1_stream})
         
         # Save fig2 (Expense Breakdown)
-        img2_bytes = chart_fig2.to_image(format="png", width=800, height=600)
+        img2_bytes = chart_fig2.to_image(format="png", width=800, height=600, engine="kaleido")
         img2_stream = io.BytesIO(img2_bytes)
         charts_worksheet.insert_image('A35', 'expense_breakdown.png', {'image_data': img2_stream})
         
         # Save fig3 (Savings Goals) if it exists
         if chart_fig3 is not None:
-            img3_bytes = chart_fig3.to_image(format="png", width=800, height=600)
+            img3_bytes = chart_fig3.to_image(format="png", width=800, height=600, engine="kaleido")
             img3_stream = io.BytesIO(img3_bytes)
             charts_worksheet.insert_image('A68', 'savings_goals.png', {'image_data': img3_stream})
+            
+        charts_worksheet.write('A100', 'Charts exported successfully!')
     except Exception as e:
-        # If image export fails, just skip it
-        charts_worksheet.write('A2', 'Note: Chart visualization requires kaleido package. Install with: pip install kaleido')
-        pass
+        # If image export fails, show the error
+        charts_worksheet.write('A2', f'Chart export error: {str(e)}')
+        charts_worksheet.write('A3', 'Note: This may require kaleido package compatibility.')
+        charts_worksheet.write('A4', 'Charts are still available in the web app view.')
 
     workbook.close()
     output.seek(0)
